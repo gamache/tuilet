@@ -1,23 +1,26 @@
+mod fonts;
+mod opts;
+mod state;
+
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyModifiers},
     prelude::*,
     widgets::{Block, Borders, Paragraph},
 };
-use state::State;
 use tui_textarea::TextArea;
 
-mod fonts;
-mod state;
+use opts::Opts;
+use state::State;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const FONT_WIDGET_INDEX: usize = 1;
 
 fn main() -> std::io::Result<()> {
+    let opts = Opts::from_args();
+    let mut state = State::new(&opts);
+
     let mut terminal = ratatui::init();
-    let mut state = match State::init() {
-        Ok(state) => state,
-        Err(e) => panic!("could not start tuilet: {}", e),
-    };
+    let input_widget_titles = [" Input ", " Font (select with up/down arrow) ", " Flags "];
 
     let mut input_widgets = [
         TextArea::default(), // input
@@ -25,12 +28,10 @@ fn main() -> std::io::Result<()> {
         TextArea::default(), // flags
     ];
 
-    let input_widget_titles = [" Input ", " Font (select with up/down arrow) ", " Flags "];
+    let mut active_widget = 0;
 
     let mut output_widget: Paragraph;
     let mut cmdline_widget: Paragraph;
-
-    let mut active_widget = 0;
 
     loop {
         state.input = String::from(&input_widgets[0].lines()[0]);

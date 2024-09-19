@@ -1,4 +1,5 @@
-use std::{fs, io::Error, process::Command};
+use regex::Regex;
+use std::{fs, process::Command};
 
 #[derive(Debug)]
 pub struct Font {
@@ -6,15 +7,32 @@ pub struct Font {
     pub dir: String,
 }
 
-pub fn fonts(dir: &str) -> Result<Vec<Font>, std::io::Error> {
+pub fn default_font_dir(toilet_exe: &str) -> String {
+    let cmd_output = Command::new(toilet_exe).args(["-I", "2"]).output().unwrap();
+
+    String::from(String::from_utf8(cmd_output.stdout).unwrap().trim_end())
+}
+
+pub fn get_fonts_from_dir(dir: &String) -> Vec<Font> {
+    match maybe_fonts(dir) {
+        Ok(fts) => fts,
+        Err(_) => {
+            let empty_fonts: Vec<Font> = Vec::new();
+            return empty_fonts;
+        }
+    }
+}
+
+fn maybe_fonts(dir: &str) -> Result<Vec<Font>, std::io::Error> {
     let mut fonts: Vec<Font> = Vec::new();
     for file in fs::read_dir(dir)? {
         let path_buf = file?.path();
         let path = path_buf.to_str().unwrap();
         if path.ends_with(".tlf") || path.ends_with(".flf") {
-            let relative = path.trim_start_matches(&format!("{}/", dir));
+            let relative_re = Regex::new(r".+/").unwrap();
+            let relative = relative_re.replace(path, ""); //path.trim_start_matches(&format!("{}/", dir));``
             let len = relative.len() - 4;
-            let name = &String::from(relative)[..len];
+            let name = &relative[..len];
 
             fonts.push(Font {
                 name: String::from(name),
@@ -23,11 +41,4 @@ pub fn fonts(dir: &str) -> Result<Vec<Font>, std::io::Error> {
         }
     }
     Ok(fonts)
-}
-
-pub fn font_dir(toilet_cmd: &str) -> Result<String, Error> {
-    let cmd_output = Command::new(toilet_cmd).args(["-I", "2"]).output()?;
-    Ok(String::from(
-        String::from_utf8(cmd_output.stdout).unwrap().trim_end(),
-    ))
 }

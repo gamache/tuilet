@@ -1,6 +1,9 @@
 use std::{env, process::Command};
 
-use crate::fonts::{font_dir, fonts, Font};
+use crate::{
+    fonts::{default_font_dir, get_fonts_from_dir, Font},
+    opts::Opts,
+};
 
 pub struct State {
     pub toilet_exe: String,
@@ -11,21 +14,42 @@ pub struct State {
     pub fonts: Vec<Font>,
     pub font_index: usize,
     pub width: usize,
+    pub default_font_dir: String,
+}
+
+// Returns true if `toilet_exe` behaves like toilet.
+fn verify_toilet_exe(toilet_exe: &String) -> bool {
+    let cmd_output = Command::new(toilet_exe)
+        .args(["-f", "term", "hello"])
+        .output()
+        .unwrap();
+
+    let output_text = String::from(String::from_utf8(cmd_output.stdout).unwrap().trim_end());
+
+    "hello" == output_text
 }
 
 impl State {
     // Creates a Tuilet state struct.
-    pub fn init() -> Result<State, std::io::Error> {
+    pub fn new(opts: &Opts) -> State {
         let toilet_exe = match env::var("TOILET") {
             Ok(exe) => exe,
             Err(_) => String::from("toilet"),
         };
-        print!("{}", toilet_exe);
+        if !verify_toilet_exe(&toilet_exe) {
+            panic!("{} is not a working toilet", toilet_exe);
+        }
 
-        let mut fonts = fonts(&font_dir(&toilet_exe)?)?;
+        let default_font_dir = default_font_dir(&toilet_exe);
+
+        let mut fonts: Vec<Font> = Vec::new();
+        fonts.append(&mut get_fonts_from_dir(&default_font_dir));
+        for dir in &opts.font_dirs {
+            fonts.append(&mut get_fonts_from_dir(dir));
+        }
         fonts.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
-        Ok(State {
+        State {
             toilet_exe,
             fonts,
             font_index: 0,
@@ -34,7 +58,8 @@ impl State {
             toilet_cmdline: String::from(""),
             output: String::from(""),
             width: 0,
-        })
+            default_font_dir,
+        }
     }
 
     // Assembles and executes the current toilet command.
@@ -51,6 +76,11 @@ impl State {
         cmdline.push_str(" -f \"");
         cmdline.push_str(&self.font().name);
         cmdline.push_str("\" ");
+        if self.font().dir != self.default_font_dir {
+            cmdline.push_str("-d \"");
+            cmdline.push_str(&self.font().dir);
+            cmdline.push_str("\" ");
+        }
 
         // Unless there is already a --width flag, add one to the command
         // we actually run, set to the width of our terminal
