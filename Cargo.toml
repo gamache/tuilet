@@ -6,7 +6,7 @@ authors = ["pete gamache <pete@gamache.org>"]
 description = "A textual user interface for Toilet, the ANSI-art text generator"
 homepage = "https://github.com/gamache/tuilet"
 repository = "https://github.com/gamache/tuilet"
-keywords = ["ansi", "toilet", "figlet", "ascii", "ascii art"]
+keywords = ["ansi", "toilet", "figlet", "ascii"]
 categories = ["text-processing", "command-line-utilities"]
 license = "MIT"
 
