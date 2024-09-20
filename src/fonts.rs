@@ -13,12 +13,12 @@ pub fn default_font_dir(toilet_exe: &str) -> String {
     String::from(String::from_utf8(cmd_output.stdout).unwrap().trim_end())
 }
 
-pub fn get_fonts_from_dir(dir: &String) -> Vec<Font> {
+pub fn get_fonts_from_dir(dir: &str) -> Vec<Font> {
     match maybe_fonts(dir) {
         Ok(fts) => fts,
         Err(_) => {
             let empty_fonts: Vec<Font> = Vec::new();
-            return empty_fonts;
+            empty_fonts
         }
     }
 }

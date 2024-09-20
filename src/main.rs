@@ -1,6 +1,4 @@
-mod fonts;
-mod opts;
-mod state;
+use std::env;
 
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyModifiers},
@@ -9,26 +7,25 @@ use ratatui::{
 };
 use tui_textarea::TextArea;
 
-use opts::Opts;
-use state::State;
+use tuilet::opts::Opts;
+use tuilet::state::State;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const FONT_WIDGET_INDEX: usize = 1;
 
 fn main() -> std::io::Result<()> {
-    let opts = Opts::from_args();
+    let opts = Opts::from_args(env::args());
     let mut state = State::new(&opts);
 
     let mut terminal = ratatui::init();
-    let input_widget_titles = [" Input ", " Font (select with up/down arrow) ", " Flags "];
 
     let mut input_widgets = [
         TextArea::default(), // input
         TextArea::default(), // font
         TextArea::default(), // flags
     ];
-
-    let mut active_widget = 0;
+    let input_widget_titles = [" Input ", " Font (select with up/down arrow) ", " Flags "];
+    let font_widget_index: usize = 1;
+    let mut active_input_widget_index = 0;
 
     let mut output_widget: Paragraph;
     let mut cmdline_widget: Paragraph;
@@ -38,9 +35,9 @@ fn main() -> std::io::Result<()> {
         state.flags = String::from(&input_widgets[2].lines()[0]);
         state.exec();
 
-        input_widgets[FONT_WIDGET_INDEX].delete_line_by_end();
-        input_widgets[FONT_WIDGET_INDEX].delete_line_by_head();
-        input_widgets[FONT_WIDGET_INDEX].insert_str(&state.font().name);
+        input_widgets[font_widget_index].delete_line_by_end();
+        input_widgets[font_widget_index].delete_line_by_head();
+        input_widgets[font_widget_index].insert_str(&state.font().name);
 
         output_widget = Paragraph::new(state.output.clone());
         cmdline_widget = Paragraph::new(state.toilet_cmdline.clone());
@@ -75,7 +72,7 @@ fn main() -> std::io::Result<()> {
             );
 
             for i in 0..(input_widgets.len()) {
-                if i == active_widget {
+                if i == active_input_widget_index {
                     activate(&mut input_widgets[i], input_widget_titles[i]);
                 } else {
                     inactivate(&mut input_widgets[i], input_widget_titles[i]);
@@ -104,8 +101,8 @@ fn main() -> std::io::Result<()> {
                 if key.modifiers.contains(KeyModifiers::SHIFT) || key.code == KeyCode::BackTab {
                     inc = len - 1;
                 }
-                active_widget = (active_widget + inc) % len;
-            } else if active_widget == FONT_WIDGET_INDEX {
+                active_input_widget_index = (active_input_widget_index + inc) % len;
+            } else if active_input_widget_index == font_widget_index {
                 // only accept up/down in the font widget
                 if key.code == KeyCode::Up {
                     state.prev_font();
@@ -113,12 +110,12 @@ fn main() -> std::io::Result<()> {
                     state.next_font();
                 }
             } else {
-                input_widgets[active_widget].input(evt);
+                input_widgets[active_input_widget_index].input(evt);
             }
         }
     }
     ratatui::restore();
-    print!("{}", state.toilet_cmdline);
+    println!("{}", state.toilet_cmdline);
     Ok(())
 }
 

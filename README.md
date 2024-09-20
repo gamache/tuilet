@@ -7,24 +7,43 @@ Tuilet makes it easy to experiment with fonts and command line
 options, showing output in real time and displaying the Toilet
 command for easy copy-pasting.
 
-![A screenshot of Tuilet](/screenshot.png?raw=true)
+Requires a Unix-like OS where `toilet` is installed.
 
-## Requirements
+![A screenshot of Tuilet](/screenshots/0.2.0.png?raw=true)
 
-- A Unix-like OS (macOS counts)
-- Either `toilet` must be in `$PATH`, or the `TOILET` environment
-  variable must point to a valid Toilet or Figlet executable
+## Usage
+
+Run tuilet at the command line. You can tab between the Input, Font, and
+Flags fields. Exit with Ctrl-C. At program exit, tuilet prints the most
+recent toilet command line to the terminal.
+
+```
+Usage: tuilet [OPTIONS]
+
+Options:
+  -D, --fontdir <PATH>  Add fonts from the given directory
+  -X, --toilet <PATH>   Set path to `toilet` executable
+  -h, --help            Print help
+  -V, --version         Print version
+```
 
 ## TODO
 
 - Better font selector
-- Support for colored output (e.g., `--gay` and `--metal`)
-- Multiple font directories
+- Internal font pack
+- Config file
+- Clipboard support
 - ???
 
 ## Bugs
 
 Oh yeah definitely
+
+## Contributing
+
+PRs and Issues welcome.
+
+Let a smile be your Contributor License Agreement
 
 ## Authorship and License
 

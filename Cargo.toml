@@ -1,6 +1,6 @@
 [package]
 name = "tuilet"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 authors = ["pete gamache <pete@gamache.org>"]
 description = "A textual user interface for Toilet, the ANSI-art text generator"
@@ -13,6 +13,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ansi-to-tui = "6.0.0"
 clap = { version = "4.5.17", features = ["cargo"] }
 ratatui = "0.28.1"
 regex = "1.10.6"
