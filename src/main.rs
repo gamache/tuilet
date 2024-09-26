@@ -19,7 +19,7 @@ fn main() -> std::io::Result<()> {
 
     let mut terminal = ratatui::init();
 
-    let mut clipboard = Clipboard::new().unwrap();
+    let use_clipboard = use_clipboard();
 
     let mut input_widgets = [
         TextArea::default(), // input
@@ -33,12 +33,18 @@ fn main() -> std::io::Result<()> {
 
     let mut active_widget_index = 0;
     let widget_count = 5;
+
+    let enter_to_copy = match use_clipboard {
+        true => "(Enter to copy) ",
+        false => "(Clipboard disabled) ",
+    };
+
     let active_widget_index_titles = [
         " Input ",
         " Font (Up/Down to select) ",
         " Flags (add '-h' to view toilet docs) ",
-        " Output (Enter to copy) ",
-        " Command Line (Enter to copy) ",
+        &format!(" Output {}", enter_to_copy),
+        &format!(" Command Line {}", enter_to_copy),
     ];
     let inactive_widget_index_titles =
         [" Input ", " Font ", " Flags ", " Output ", " Command Line "];
@@ -157,17 +163,19 @@ fn main() -> std::io::Result<()> {
                 }
             } else if output_widget_indexes.contains(&active_widget_index) {
                 if key.code == KeyCode::Enter {
-                    // copy to clipboard
-                    if active_widget_index == output_widget_index {
-                        clipboard
-                            .set_text(state.toilet_cmdline_output.clone())
-                            .expect("clipboard failed");
-                    } else if active_widget_index == cmdline_widget_index {
-                        clipboard
-                            .set_text(state.toilet_cmdline.clone())
-                            .expect("clipboard failed");
-                    }
-                    just_copied = true;
+                    if use_clipboard {
+                        let mut clipboard = Clipboard::new().unwrap();
+                        if active_widget_index == output_widget_index {
+                            clipboard
+                                .set_text(state.toilet_cmdline_output.clone())
+                                .expect("clipboard failed");
+                        } else if active_widget_index == cmdline_widget_index {
+                            clipboard
+                                .set_text(state.toilet_cmdline.clone())
+                                .expect("clipboard failed");
+                        }
+                        just_copied = true;
+                    };
                 }
             } else if input_widget_indexes.contains(&active_widget_index) {
                 if key.code == KeyCode::Enter {
@@ -227,4 +235,11 @@ fn active_output<'a>(paragraph: &Paragraph<'a>, title: String, just_copied: bool
         .clone()
         .wrap(Wrap { trim: false })
         .block(Block::bordered().style(Style::default().bold()).title(t))
+}
+
+fn use_clipboard() -> bool {
+    match Clipboard::new() {
+        Ok(_) => true,
+        _ => false,
+    }
 }
