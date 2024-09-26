@@ -1,20 +1,23 @@
 # tuilet
 
+![Crates.io Version](https://img.shields.io/crates/v/tuilet)
+
 A TUI for [toilet](https://github.com/cacalabs/toilet), the premier
 command-line ANSI text generator.
 
-Tuilet makes it easy to experiment with fonts and command line
-options, showing output in real time and displaying the Toilet
-command for easy copy-pasting.
+Tuilet makes it easy to experiment with fonts and command line options.
 
 Requires a Unix-like OS where `toilet` is installed.
 
-![A screenshot of Tuilet](/screenshots/0.2.0.png?raw=true)
+![A screenshot of Tuilet](/screenshots/0.3.0.png?raw=true)
 
 ## Usage
 
-Run tuilet at the command line. You can tab between the Input, Font, and
-Flags fields. Exit with Ctrl-C. At program exit, tuilet prints the most
+Tab selects the active textarea.
+Select fonts with the Up and Down arrows.
+Output and command line can be copied by pressing Enter.
+
+Exit with Ctrl-C. At program exit, tuilet prints the most
 recent toilet command line to the terminal.
 
 ```
@@ -32,7 +35,6 @@ Options:
 - Better font selector
 - Internal font pack
 - Config file
-- Clipboard support
 - ???
 
 ## Bugs

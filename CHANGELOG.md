@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0 (2024-09-26)
+
+Added copy-to-clipboard support for Output and Command Line fields.
+
 ## 0.2.0 (2024-09-20)
 
 This release adds:

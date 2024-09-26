@@ -8,15 +8,37 @@ use crate::{
 
 #[derive(Debug)]
 pub struct State<'a> {
+    // Path to toilet executable
     pub toilet_exe: String,
+
+    // The command line that the user asked for
     pub toilet_cmdline: String,
-    pub input: String,
-    pub flags: String,
+
+    // The output of toilet_cmdline, suitable for copying but not
+    // for displaying inside Tuilet
+    pub toilet_cmdline_output: String,
+
+    // The output of a command line very much like toilet_cmdline, whose
+    // output is suitable for displaying inside Tuilet but not copying
     pub output: ratatui::text::Text<'a>,
-    pub fonts: Vec<Font>,
-    pub font_index: usize,
+
+    // Text to render
+    pub input: String,
+
+    // Flags to pass to toilet
+    pub flags: String,
+
+    // Width of current window
     pub width: usize,
+
+    // toilet_exe's built in font directory
     pub default_font_dir: String,
+
+    // All known fonts
+    pub fonts: Vec<Font>,
+
+    // Index of currently selected font
+    pub font_index: usize,
 }
 
 // Returns true if `toilet_exe` behaves like toilet.
@@ -62,6 +84,7 @@ impl State<'_> {
             input: String::from(""),
             flags: String::from(""),
             toilet_cmdline: String::from(""),
+            toilet_cmdline_output: String::from(""),
             output: "".into_text().unwrap(),
             width: 0,
             default_font_dir,
@@ -71,28 +94,28 @@ impl State<'_> {
     // Assembles and executes the current toilet command.
     // Sets `self.toilet_cmdline` and `self.output`.
     pub fn exec(&mut self) {
-        // cmdline (self.toilet_cmdline) is intended for showing to the user.
-        // real_cmdline is what we will actually run to collect output.
+        // toilet_cmdline (self.toilet_cmdline) is the cmdline the user asked for.
+        // internal_cmdline is what we will actually run to collect output.
 
-        let mut cmdline = self.toilet_exe.clone();
+        let mut toilet_cmdline = self.toilet_exe.clone();
         if !self.flags.is_empty() {
-            cmdline.push(' ');
-            cmdline.push_str(&self.flags);
+            toilet_cmdline.push(' ');
+            toilet_cmdline.push_str(&self.flags);
         }
-        cmdline.push_str(" -f \"");
-        cmdline.push_str(&self.font().name);
-        cmdline.push('"');
+        toilet_cmdline.push_str(" -f \"");
+        toilet_cmdline.push_str(&self.font().name);
+        toilet_cmdline.push('"');
         if self.font().dir != self.default_font_dir {
-            cmdline.push_str(" -d \"");
-            cmdline.push_str(&self.font().dir);
-            cmdline.push('"');
+            toilet_cmdline.push_str(" -d \"");
+            toilet_cmdline.push_str(&self.font().dir);
+            toilet_cmdline.push('"');
         }
 
         // Unless there is already a --width flag, add one to the command
         // we actually run, set to the width of our terminal
-        let mut real_cmdline = cmdline.clone();
+        let mut internal_cmdline = toilet_cmdline.clone();
         if self.width > 0 && !&self.flags.contains("--width") {
-            real_cmdline.push_str(&format!(" --width {}", self.width - 2));
+            internal_cmdline.push_str(&format!(" --width {}", self.width - 2));
         }
 
         // armor quotes and backslashes in input
@@ -101,20 +124,26 @@ impl State<'_> {
         input = input.replace('"', "\\\"");
 
         input = format!(" \"{}\"", input);
-        real_cmdline.push_str(&input);
-        cmdline.push_str(&input);
+        internal_cmdline.push_str(&input);
+        toilet_cmdline.push_str(&input);
 
-        self.toilet_cmdline = cmdline;
+        self.toilet_cmdline = toilet_cmdline.clone();
 
-        let cmd_output = Command::new("sh")
-            .args(["-c", &real_cmdline])
+        let internal_cmdline_output = Command::new("sh")
+            .args(["-c", &internal_cmdline])
             .output()
             .unwrap();
-        self.output = String::from_utf8(cmd_output.stdout)
+        self.output = String::from_utf8(internal_cmdline_output.stdout)
             .unwrap()
             .trim_end()
             .into_text()
             .unwrap();
+
+        let toilet_cmdline_output = Command::new("sh")
+            .args(["-c", &toilet_cmdline])
+            .output()
+            .unwrap();
+        self.toilet_cmdline_output = String::from_utf8(toilet_cmdline_output.stdout).unwrap();
     }
 
     // Returns the currently selected font.
