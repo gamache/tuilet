@@ -30,7 +30,7 @@ fn maybe_fonts(dir: &str) -> Result<Vec<Font>, std::io::Error> {
         let path = path_buf.to_str().unwrap();
         if path.ends_with(".tlf") || path.ends_with(".flf") {
             let relative_re = Regex::new(r".+/").unwrap();
-            let relative = relative_re.replace(path, ""); //path.trim_start_matches(&format!("{}/", dir));``
+            let relative = relative_re.replace(path, "");
             let len = relative.len() - 4;
             let name = &relative[..len];
 

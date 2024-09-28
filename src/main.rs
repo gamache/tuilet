@@ -20,7 +20,16 @@ fn main() -> std::io::Result<()> {
     let mut terminal = ratatui::init();
 
     let use_clipboard = use_clipboard();
+    let mut just_copied = false;
+    let enter_to_copy = match use_clipboard {
+        true => "(Enter to copy) ",
+        false => "(Clipboard disabled) ",
+    };
 
+    let title_widget = Paragraph::new(format!(
+        " tuilet v{} (Ctrl-C to quit, Tab to change focus) ",
+        VERSION
+    ));
     let mut input_widgets = [
         TextArea::default(), // input
         TextArea::default(), // font
@@ -31,34 +40,32 @@ fn main() -> std::io::Result<()> {
         Paragraph::default(), // cmdline
     ];
 
-    let mut active_widget_index = 0;
-    let widget_count = 5;
-
-    let enter_to_copy = match use_clipboard {
-        true => "(Enter to copy) ",
-        false => "(Clipboard disabled) ",
-    };
-
     let active_widget_index_titles = [
         " Input ",
         " Font (Up/Down to select) ",
         " Flags (add '-h' to view toilet docs) ",
-        &format!(" Output {}", enter_to_copy),
-        &format!(" Command Line {}", enter_to_copy),
+        &format!("─ Output {}", enter_to_copy),
+        &format!("─ Command Line {}", enter_to_copy),
     ];
-    let inactive_widget_index_titles =
-        [" Input ", " Font ", " Flags ", " Output ", " Command Line "];
+    let inactive_widget_index_titles = [
+        " Input ",
+        " Font ",
+        " Flags ",
+        "─ Output ",
+        "─ Command Line ",
+    ];
 
+    // these indexes are just for handling focus; don't use them to
+    // reach into an array!
+    let mut active_widget_index = 0;
     let input_widget_index: usize = 0;
     let font_widget_index: usize = 1;
     let flags_widget_index: usize = 2;
     let output_widget_index: usize = 3;
     let cmdline_widget_index: usize = 4;
-
     let input_widget_indexes = [input_widget_index, font_widget_index, flags_widget_index];
     let output_widget_indexes = [output_widget_index, cmdline_widget_index];
-
-    let mut just_copied = false;
+    let widget_count = 5;
 
     loop {
         state.input = String::from(&input_widgets[0].lines()[0]);
@@ -128,12 +135,7 @@ fn main() -> std::io::Result<()> {
                 ])
                 .split(frame.area());
 
-            let title = format!(
-                " tuilet v{} (Ctrl-C to quit, Tab to change focus) ",
-                VERSION
-            );
-
-            frame.render_widget(Paragraph::new(title), layout[0]);
+            frame.render_widget(&title_widget, layout[0]);
             frame.render_widget(&input_widgets[0], layout[1]);
             frame.render_widget(&input_widgets[1], layout[2]);
             frame.render_widget(&input_widgets[2], layout[3]);
@@ -141,8 +143,8 @@ fn main() -> std::io::Result<()> {
             frame.render_widget(&output_widgets[1], layout[5]);
         })?;
 
+        // Handle input
         just_copied = false;
-
         let evt = event::read()?;
         if let Event::Key(key) = evt {
             if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
@@ -162,20 +164,18 @@ fn main() -> std::io::Result<()> {
                     state.next_font();
                 }
             } else if output_widget_indexes.contains(&active_widget_index) {
-                if key.code == KeyCode::Enter {
-                    if use_clipboard {
-                        let mut clipboard = Clipboard::new().unwrap();
-                        if active_widget_index == output_widget_index {
-                            clipboard
-                                .set_text(state.toilet_cmdline_output.clone())
-                                .expect("clipboard failed");
-                        } else if active_widget_index == cmdline_widget_index {
-                            clipboard
-                                .set_text(state.toilet_cmdline.clone())
-                                .expect("clipboard failed");
-                        }
-                        just_copied = true;
-                    };
+                if key.code == KeyCode::Enter && use_clipboard {
+                    let mut clipboard = Clipboard::new().unwrap();
+                    if active_widget_index == output_widget_index {
+                        clipboard
+                            .set_text(state.toilet_cmdline_output.clone())
+                            .expect("clipboard failed");
+                    } else if active_widget_index == cmdline_widget_index {
+                        clipboard
+                            .set_text(state.toilet_cmdline.clone())
+                            .expect("clipboard failed");
+                    }
+                    just_copied = true;
                 }
             } else if input_widget_indexes.contains(&active_widget_index) {
                 if key.code == KeyCode::Enter {
@@ -187,6 +187,7 @@ fn main() -> std::io::Result<()> {
             }
         }
     }
+
     ratatui::restore();
     println!("Last command line:\n{}", state.toilet_cmdline);
     Ok(())
@@ -220,7 +221,8 @@ fn active_input<'a>(textarea: &TextArea<'a>, title: String) -> TextArea<'a> {
 
 fn inactive_output<'a>(paragraph: &Paragraph<'a>, title: String) -> Paragraph<'a> {
     paragraph.clone().wrap(Wrap { trim: false }).block(
-        Block::bordered()
+        Block::new()
+            .borders(Borders::TOP)
             .style(Style::default().fg(Color::Gray))
             .title(title),
     )
@@ -231,15 +233,14 @@ fn active_output<'a>(paragraph: &Paragraph<'a>, title: String, just_copied: bool
     if just_copied {
         t.push_str("Copied! ");
     }
-    paragraph
-        .clone()
-        .wrap(Wrap { trim: false })
-        .block(Block::bordered().style(Style::default().bold()).title(t))
+    paragraph.clone().wrap(Wrap { trim: false }).block(
+        Block::new()
+            .borders(Borders::TOP)
+            .style(Style::default().bold())
+            .title(t),
+    )
 }
 
 fn use_clipboard() -> bool {
-    match Clipboard::new() {
-        Ok(_) => true,
-        _ => false,
-    }
+    Clipboard::new().is_ok()
 }

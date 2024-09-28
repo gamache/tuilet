@@ -61,7 +61,6 @@ fn verify_toilet_exe(toilet_exe: &String) -> bool {
 }
 
 impl State<'_> {
-    // Creates a Tuilet state struct.
     pub fn new(opts: &Opts) -> State {
         let toilet_exe = opts.toilet_exe.clone();
         if !verify_toilet_exe(&toilet_exe) {
