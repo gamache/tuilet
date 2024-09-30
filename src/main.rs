@@ -19,12 +19,12 @@ fn main() -> std::io::Result<()> {
 
     let mut terminal = ratatui::init();
 
-    let use_clipboard = use_clipboard();
-    let mut just_copied = false;
+    let use_clipboard = Clipboard::new().is_ok();
     let enter_to_copy = match use_clipboard {
         true => "(Enter to copy) ",
         false => "(Clipboard disabled) ",
     };
+    let mut just_copied = false;
 
     let title_widget = Paragraph::new(format!(
         " tuilet v{} (Ctrl-C to quit, Tab to change focus) ",
@@ -55,8 +55,6 @@ fn main() -> std::io::Result<()> {
         "─ Command Line ",
     ];
 
-    // these indexes are just for handling focus; don't use them to
-    // reach into an array!
     let mut active_widget_index = 0;
     let input_widget_index: usize = 0;
     let font_widget_index: usize = 1;
@@ -121,7 +119,7 @@ fn main() -> std::io::Result<()> {
         terminal.draw(|frame| {
             state.width = frame.area().width as usize;
             let cmdline_size: u16 =
-                (state.toilet_cmdline.len() as f32 / (state.width - 2) as f32).ceil() as u16 + 2;
+                (state.toilet_cmdline.len() as f32 / state.width as f32).ceil() as u16 + 2;
 
             let layout = Layout::default()
                 .direction(Direction::Vertical)
@@ -165,7 +163,7 @@ fn main() -> std::io::Result<()> {
                 }
             } else if output_widget_indexes.contains(&active_widget_index) {
                 if key.code == KeyCode::Enter && use_clipboard {
-                    let mut clipboard = Clipboard::new().unwrap();
+                    let mut clipboard = Clipboard::new().expect("clipboard failed");
                     if active_widget_index == output_widget_index {
                         clipboard
                             .set_text(state.toilet_cmdline_output.clone())
@@ -239,8 +237,4 @@ fn active_output<'a>(paragraph: &Paragraph<'a>, title: String, just_copied: bool
             .style(Style::default().bold())
             .title(t),
     )
-}
-
-fn use_clipboard() -> bool {
-    Clipboard::new().is_ok()
 }

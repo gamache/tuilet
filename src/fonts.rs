@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::{fs, process::Command};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Font {
     pub name: String,
     pub dir: String,
@@ -41,4 +41,15 @@ fn maybe_fonts(dir: &str) -> Result<Vec<Font>, std::io::Error> {
         }
     }
     Ok(fonts)
+}
+
+pub fn search(fonts: &Vec<Font>, query: &str) -> Vec<Font> {
+    let lowercase_query = query.to_lowercase();
+    let mut results: Vec<Font> = Vec::new();
+    for f in fonts {
+        if f.name.to_lowercase().contains(&lowercase_query) {
+            results.push(f.clone());
+        }
+    }
+    results
 }
